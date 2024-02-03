@@ -74,17 +74,19 @@ export class Autocompleter extends Application {
 
     this._location = this._getSelectionCoords(10, 0) || { left: 0, top: 0 };
 
-    this.render();
+    void this.render();
   }
 
   static get defaultOptions(): ApplicationOptions {
-    const options = super.defaultOptions;
+    const options = {
+      ...super.defaultOptions,
 
-    options.classes = ['acm-autocomplete'];
-    options.template = `modules/${moduleJson.id}/templates/autocompleter.hbs`,
-    options.popOut = false;
-    options.resizable = false;
-    options.height = 'auto';
+      classes: ['acm-autocomplete'],
+      template: `modules/${moduleJson.id}/templates/autocompleter.hbs`,
+      popOut: false,
+      resizable: false,
+      height: 'auto',
+    } as ApplicationOptions;
 
     return options;
   }
@@ -92,26 +94,26 @@ export class Autocompleter extends Application {
   // moves this to a new target (in the case of a re-render, for instance)
   retarget(newTarget) {
     this._editor = newTarget;
-    this.render();
+    void this.render();
   }
 
   // this provides fields that will be available in the template; called by parent class
   public async getData(): Promise<any> {
     const data = {
-        ...(await super.getData()),
-        location: this._location,
-        docTypes: docTypes,
-        singleAtWaiting: this._currentMode===AutocompleteMode.singleAtWaiting,
-        docSearch: this._currentMode===AutocompleteMode.docSearch,
-        journalPageSearch: this._currentMode===AutocompleteMode.journalPageSearch,
-        searchingFromJournalPage: this._searchingFromJournalPage,
-        firstSearchIdx: this._initialSearchOffset(),
-        journalName: this._selectedJournal?.name,
-        docType: docTypes.find((dt)=>(dt.type===this._searchDocType))?.searchName,
-        highlightedEntry: this._focusedMenuKey,
-        searchResults: this._filteredSearchResults,
-        shownFilter: this._shownFilter,
-        hasMore: (this._lastPulledRowCount || 0) > (this._filteredSearchResults?.length || 0),
+      ...(await super.getData()),
+      location: this._location,
+      docTypes: docTypes,
+      singleAtWaiting: this._currentMode===AutocompleteMode.singleAtWaiting,
+      docSearch: this._currentMode===AutocompleteMode.docSearch,
+      journalPageSearch: this._currentMode===AutocompleteMode.journalPageSearch,
+      searchingFromJournalPage: this._searchingFromJournalPage,
+      firstSearchIdx: this._initialSearchOffset(),
+      journalName: this._selectedJournal?.name,
+      docType: docTypes.find((dt)=>(dt.type===this._searchDocType))?.searchName,
+      highlightedEntry: this._focusedMenuKey,
+      searchResults: this._filteredSearchResults,
+      shownFilter: this._shownFilter,
+      hasMore: (this._lastPulledRowCount || 0) > (this._filteredSearchResults?.length || 0),
     };
     //log(false, data);
 
@@ -151,9 +153,9 @@ export class Autocompleter extends Application {
           this._editor.ownerDocument.removeEventListener('pointerdown', this._onPointerDown);
         }
       } else if (!wrapper.contains(event.target as Node)) {
-        this.close(); 
+        void this.close(); 
       }
-    }
+    };
 
     // activateListeners happens every time we rerender, so if we've set the event listener before, we
     //    need to remove the old one and replace it with the new one (which ties to the new DOM elements)
@@ -170,7 +172,7 @@ export class Autocompleter extends Application {
     if (this._editorType===EditorType.TinyMCE) {
       this._editor.ownerDocument.addEventListener('pointerdown', onPointerDown);
     }
-}
+  }
 
   public async render(force?: boolean) {
     const result = await super.render(force);
@@ -181,7 +183,7 @@ export class Autocompleter extends Application {
   async close(options = {}): Promise<void> {
     // turn off visibility immediately so we don't have to wait for the animation
     // NOTE: the application is rendered into the parent application, even if we're in an iframe for TinyMCE
-    const wrapper = document.querySelector(`.acm-autocomplete`) as HTMLElement;
+    const wrapper = document.querySelector('.acm-autocomplete') as HTMLElement;
     if (wrapper)
       wrapper.style.display = 'none';
 
@@ -199,7 +201,7 @@ export class Autocompleter extends Application {
     return super.close(options);
   }
 
-  private _onListClick = async(event: MouseEvent): Promise<void> => {
+  private _onListClick = async (event: MouseEvent): Promise<void> => {
     if (!event?.currentTarget)
       return;
 
@@ -207,10 +209,10 @@ export class Autocompleter extends Application {
 
     // pretend we clicked in
     this._focusedMenuKey = Number.parseInt(index);
-    this._onKeydown({key: 'Enter', preventDefault: ()=>{}, stopPropagation: ()=>{}} as KeyboardEvent);
-  }
+    await this._onKeydown({key: 'Enter', preventDefault: ()=>{}, stopPropagation: ()=>{}} as KeyboardEvent);
+  };
 
-  private _onListMouseover = async(event: MouseEvent): Promise<void> => {
+  private _onListMouseover = async (event: MouseEvent): Promise<void> => {
     if (!event?.currentTarget)
       return;
 
@@ -219,9 +221,9 @@ export class Autocompleter extends Application {
     // pretend we clicked in
     if (this._focusedMenuKey!==index) {
       this._focusedMenuKey = index;
-      this.render();
+      await this.render();
     }
-  }
+  };
 
 
   // we render at the end, so can return for cases that don't require it to save that step
@@ -245,7 +247,7 @@ export class Autocompleter extends Application {
             break;
           }
 
-          case "Escape": {
+          case 'Escape': {
             // if we're on the first menu, then we want to insert a @ symbol
             this._insertTextAndClose('@');
             break;
@@ -253,23 +255,23 @@ export class Autocompleter extends Application {
 
           case 'Backspace': {
             // close the menu
-            this._editor.focus()
-            this.close();
+            this._editor.focus();
+            await this.close();
             return;
           }
 
-          case "ArrowUp": {
+          case 'ArrowUp': {
             this._focusedMenuKey = (this._focusedMenuKey - 1 + docTypes.length) % docTypes.length;
             
             break;
           }
-          case "ArrowDown": {
+          case 'ArrowDown': {
             this._focusedMenuKey = (this._focusedMenuKey + 1) % docTypes.length;
     
             break;
           }
 
-          default:
+          default: {
             // see if it's one of the valid keypresses
             const match = docTypes.find((dt)=>(dt.keypress.toLocaleLowerCase()===event.key.toLocaleLowerCase()));
 
@@ -282,8 +284,7 @@ export class Autocompleter extends Application {
               // ignore
               return;
             }
-
-            break;
+          }
         }
         break;
       }
@@ -314,7 +315,7 @@ export class Autocompleter extends Application {
 
                 // if it's 0, pop up the add item dialog
                 if (this._focusedMenuKey===0) {
-                  this._createDocument(this._searchDocType);
+                  await this._createDocument(this._searchDocType);
                 } else if (this._searchDocType===ValidDocType.Journal) {
                   // for journal, we have to go into journal mode
                   this._currentMode = AutocompleteMode.journalPageSearch;
@@ -324,12 +325,12 @@ export class Autocompleter extends Application {
                   if (this._currentDoc && this._focusedMenuKey===1) {
                     // the current journal special command
                     journal = {
-                      uuid: this._currentDoc.parent.uuid,
-                      name: this._currentDoc.parent.name,
+                      uuid: this._currentDoc.parent?.uuid,
+                      name: this._currentDoc.parent?.name,
                       parentJournal: this._currentDoc.parent
                     };
                   } else {
-                    journal = this._filteredSearchResults[this._focusedMenuKey - 2];
+                    journal = this._filteredSearchResults?.[this._focusedMenuKey - 2];
                   }
                   this._selectedJournal = {...journal};
 
@@ -355,7 +356,6 @@ export class Autocompleter extends Application {
 
                   // insert the appropriate text
                   if (item) {
-                    const docType = docTypes.find((dt)=>(dt.type===this._searchDocType));
                     this._insertReferenceAndClose(item.uuid);
                   }
                 }
@@ -363,7 +363,7 @@ export class Autocompleter extends Application {
                 // handle journal page select
                 // if it's 0, we are creating a new page.
                 if (!this._focusedMenuKey) {
-                  this._createDocument(this._searchDocType!);
+                  await this._createDocument(this._searchDocType);
                 }
                 // if it's 1 (and we're not searching current journal), we just add a reference to the whole journal
                 else if (this._focusedMenuKey === 1) {
@@ -409,18 +409,19 @@ export class Autocompleter extends Application {
               break;
             }
             
-            case "Escape": {
+            case 'Escape': {
               // just close the whole menu (without inserting @, because it's more likely we just changed our mind)
-              this._editor.focus()
-              this.close();
+              this._editor.focus();
+              await this.close();
               return;
             }
 
-            case "ArrowUp": {
+            case 'ArrowUp': {
               this._focusedMenuKey = (this._focusedMenuKey - 1 + this._filteredSearchResults.length + resultStartOffset) % (this._filteredSearchResults.length + resultStartOffset);
               break;
             }
-            case "ArrowDown": {
+
+            case 'ArrowDown': {
               this._focusedMenuKey = (this._focusedMenuKey + 1) % (this._filteredSearchResults.length + resultStartOffset);
               break;
             }
@@ -438,7 +439,7 @@ export class Autocompleter extends Application {
     }
 
     await this.render();
-  }
+  };
           
   private _getSelectionCoords = function(paddingLeft: number, paddingTop: number): WindowPosition | null {
     const sel = this._editor.ownerDocument.getSelection();
@@ -484,14 +485,14 @@ export class Autocompleter extends Application {
     // return coord
     //return { x: rect.x - editorRect.left + paddingLeft, y: rect.y - editorRect.top + paddingTop };    
     return { left: rect.left + adjustmentRect.left + paddingLeft, top: rect.top + adjustmentRect.top + paddingTop }
-  }
+  };
 
   // _lastPulledSearchResults contains the full set of what we got back last time we pulled
   private _getFilteredSearchResults(): SearchResult[] {
     const FULL_TEXT_SEARCH = true; // TODO (for now, only name is searchable anyway)
     const RESULT_LENGTH = moduleSettings.get(SettingKeys.resultLength);
 
-    let retval: SearchResult[];
+    let retval = [] as SearchResult[];
 
     if (FULL_TEXT_SEARCH) { // TODO
       retval = this._lastPulledSearchResults;  // we don't know enough to filter any more (other than length of list)
@@ -535,7 +536,7 @@ export class Autocompleter extends Application {
       // select create/whole journal option
       this._focusedMenuKey = 0;
     }
-  }
+  };
 
   // pull the new data from the database
   private async _pullData(): Promise<void> {
@@ -676,8 +677,8 @@ export class Autocompleter extends Application {
       const compMatchs = getGame().packs.filter(p => compendiumRegEx.test(p.collection) && p.documentName === documentName);
       for (const compMatch of compMatchs) {
         // find any matching docs
-        const matchs = compMatch.index.filter(r => r.name !== undefined && queryRegex.test(r.name)).map(c => c._id);
-        const matchdocs = (await compMatch.getDocuments({ _id__in: matchs })) as DocumentType11[];
+        const matches = compMatch.index.filter(r => r.name !== undefined && queryRegex.test(r.name)).map(c => c._id);
+        const matchdocs = (await compMatch.getDocuments({ _id__in: matches })) as DocumentType11[];
         results = results.concat(matchdocs);
 
         if (results.length >= maxResultCount)
@@ -707,7 +708,7 @@ export class Autocompleter extends Application {
   private _insertTextAndClose(text: string): void {
     this._editor.focus();  
     this._editor.ownerDocument.execCommand('insertText', false, text);
-    this.close();
+    void this.close();
   }
 
   private async _createDocument(docType: ValidDocType): Promise<void> {
@@ -727,8 +728,8 @@ export class Autocompleter extends Application {
     if (this._currentMode === AutocompleteMode.journalPageSearch) {
       // We are creating a new page in a journal; set the journal as parent
       //    and add it at the end of the journal
-      parent = this._selectedJournal.parentJournal as JournalEntry11;
-      sort = (this._selectedJournal.parentJournal!.pages.contents.at(-1)?.sort ?? 0) + CONST.SORT_INTEGER_DENSITY;
+      parent = this._selectedJournal?.parentJournal as JournalEntry11;
+      sort = (this._selectedJournal?.parentJournal?.pages.contents.at(-1)?.sort ?? 0) + CONST.SORT_INTEGER_DENSITY;
       documentName ='JournalEntryPage'; 
     } else if (curMainDoc.documentName === collection.documentName) {
       // We are creating a new entry of the same type of the document we are editing;
@@ -750,7 +751,7 @@ export class Autocompleter extends Application {
     const range = selection?.rangeCount ? selection?.getRangeAt(0) : null;
 
     const cls = getDocumentClass(documentName) as any;
-    cls.createDialog(data, options).then((result: any): void => {
+    cls.createDialog(data, options).then(async (result: DocumentType11 | null): void => {
       if (result) {
         // it was created
 
@@ -761,9 +762,9 @@ export class Autocompleter extends Application {
         //    leaving the prompt showing (by typing nothing)
         if (this._shownFilter.length > 0) {
           const label = getGame().i18n.localize(cls.metadata.label);
-          const docDefaultName = getGame().i18n.format("DOCUMENT.New", { type: label });
-          if (result.name.startsWith(docDefaultName)) {
-            result.update({ name: this._shownFilter });
+          const docDefaultName = getGame().i18n.format('DOCUMENT.New', { type: label });
+          if (result.name?.startsWith(docDefaultName)) {
+            await result.update({ name: this._shownFilter });
           }
         }
         if (range) {
@@ -776,7 +777,7 @@ export class Autocompleter extends Application {
       }
     });
 
-    this.close();
+    void this.close();
   }
 
   private _initialSearchOffset = (): number => (
